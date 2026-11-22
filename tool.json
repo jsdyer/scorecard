@@ -1,16 +1,22 @@
 {
-  "id": "coolcode-tool-template",
-  "title": "CoolCode Tool Starter",
-  "description": "A browser-only example that trims lines and removes exact duplicates.",
-  "category": "security",
-  "tags": ["text", "lines", "duplicates"],
-  "icon": "scan-search",
-  "url": "/coolcode-tool-template/",
-  "source": "https://github.com/jsdyer/coolcode-tool-template",
+  "id": "scorecard",
+  "title": "Policy Rate Scorecard",
+  "description": "Compare market participants’ published rate forecasts with the Bank of Canada’s next decisions.",
+  "category": "money",
+  "tags": [
+    "monetary policy",
+    "forecasts",
+    "interest rates",
+    "Bank of Canada"
+  ],
+  "icon": "percent",
+  "url": "/scorecard/",
+  "source": "https://github.com/jsdyer/scorecard",
   "hosting": "project",
   "access": "browser",
   "data_info": {
-    "mode": "local",
-    "detail": "The browser reads the text you paste and compares its lines."
+    "mode": "snapshot",
+    "detail": "Quarterly Bank of Canada survey medians are matched to dated policy decisions and checked weekly.",
+    "cadence": "Checked weekly"
   }
 }

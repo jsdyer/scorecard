@@ -1,0 +1,37 @@
+name: Refresh Bank of Canada scorecard
+on:
+  schedule:
+    - cron: '37 14 * * 4'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: scorecard-source-refresh
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python scripts/refresh.py
+      - run: python -m unittest discover -s tests -v
+      - run: python scripts/build.py
+      - name: Save the verified snapshot and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add web/data/scorecard.json
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Refresh Bank of Canada survey and decision receipts"
+            git push origin HEAD:main
+          fi
+          gh workflow run pages.yml --ref main

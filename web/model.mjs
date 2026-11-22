@@ -1,7 +1,34 @@
-// Keep transformations separate from the DOM so they can be tested directly.
-export function cleanLines(text) {
-  if (typeof text !== 'string') throw new TypeError('Expected text');
-  const lines = text.split(/\r\n|\r|\n/).map(line => line.trim()).filter(Boolean);
-  const unique = [...new Set(lines)];
-  return { text: unique.join('\n'), count: unique.length, removed: lines.length - unique.length };
+export function months(records) {
+  return [...new Set(records.map(row => row.target))].sort().reverse();
+}
+
+export function selected(records, target, view) {
+  if (view === "target") {
+    return records.filter(row => row.target === target).sort((a,b) => b.published.localeCompare(a.published));
+  }
+  const latest = new Map();
+  for (const row of records) {
+    if (row.actual === null) continue;
+    const prior = latest.get(row.target);
+    if (!prior || prior.published < row.published) latest.set(row.target, row);
+  }
+  return [...latest.values()].sort((a,b) => b.target.localeCompare(a.target));
+}
+
+export function errorBp(row) {
+  return row.actual === null ? null : Math.round((row.median - row.actual) * 100);
+}
+
+export function summary(rows) {
+  const errors = rows.map(errorBp).filter(error => error !== null);
+  return {
+    hits: errors.filter(error => error === 0).length,
+    total: errors.length,
+    mae: errors.length ? errors.reduce((sum,x) => sum + Math.abs(x), 0) / errors.length : null,
+  };
+}
+
+export function csv(rows) {
+  const keys = ["target","decision","edition","published","respondents","low","median","high","actual","error_bp","source"];
+  return [keys.join(","), ...rows.map(row => keys.map(key => key === "error_bp" ? errorBp(row) : row[key]).join(","))].join("\r\n")+"\r\n";
 }

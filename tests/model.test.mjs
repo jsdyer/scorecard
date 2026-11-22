@@ -1,21 +1,19 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { cleanLines } from '../web/model.mjs';
-test('trims, removes blanks and preserves first-seen order', () => {
-  assert.deepEqual(cleanLines('  Halifax\nLangley\nHalifax\n\nVancouver  '), {
-    text: 'Halifax\nLangley\nVancouver', count: 3, removed: 1,
-  });
+import test from "node:test";
+import assert from "node:assert/strict";
+import {selected,errorBp,summary,csv} from "../web/model.mjs";
+const sample = [
+  {target:"2025-06",published:"2025-04-20",actual:2.5,median:2.25},
+  {target:"2025-06",published:"2025-03-20",actual:2.5,median:2.5},
+  {target:"2025-07",published:"2025-05-20",actual:2.25,median:2.25},
+  {target:"2025-09",published:"2025-05-20",actual:null,median:2.5},
+];
+test("completed decisions each count once with latest eligible forecast",()=>{
+  const rows=selected(sample,"","latest");
+  assert.equal(rows.length,2);
+  assert.deepEqual(summary(rows),{hits:1,total:2,mae:12.5});
 });
-test('supports Windows and old Mac line endings', () => {
-  assert.equal(cleanLines('a\r\nb\ra').text, 'a\nb');
+test("keeps pending values separate from zero",()=>{
+  assert.equal(errorBp(sample[3]),null);
+  assert.deepEqual(summary([sample[3]]),{hits:0,total:0,mae:null});
+  assert.match(csv([sample[3]]),/2.5,,,,/);
 });
-test('empty text and whitespace produce an empty result', () => {
-  assert.deepEqual(cleanLines(' \n\t'), { text: '', count: 0, removed: 0 });
-});
-test('preserves case and Unicode', () => {
-  assert.equal(cleanLines('Québec\nquébec\n東京\nQuébec').text, 'Québec\nquébec\n東京');
-});
-test('treats markup as ordinary text', () => {
-  assert.equal(cleanLines('<script>alert(1)</script>\n<script>alert(1)</script>').text, '<script>alert(1)</script>');
-});
-test('rejects non-text input', () => { assert.throws(() => cleanLines(null), TypeError); });

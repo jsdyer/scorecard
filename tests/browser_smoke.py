@@ -2,6 +2,7 @@
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import os
 import shutil
 import tempfile
 import threading
@@ -24,27 +25,31 @@ def main():
         threading.Thread(target=server.serve_forever, daemon=True).start()
         try:
             with sync_playwright() as p:
-                browser = p.chromium.launch()
+                browser = p.chromium.launch(executable_path=os.environ.get("BROWSER_EXECUTABLE") or None)
                 page = browser.new_page(viewport={"width": 1280, "height": 1000})
                 errors = []
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 page.goto(f"http://127.0.0.1:{server.server_port}/example-tool/")
-                page.locator("#sample").click()
-                assert page.locator("#output").input_value() == "Halifax\nLangley\nVancouver"
-                assert "1 duplicate removed" in page.locator("#status").inner_text()
-                page.locator("#input").fill('<img src=x onerror="alert(1)">\n<img src=x onerror="alert(1)">')
-                assert page.locator("#output").input_value() == '<img src=x onerror="alert(1)">'
-                assert page.locator("img").count() == 0
-                page.locator("#clear").click()
-                assert page.locator("#output").input_value() == ""
-                page.locator("#sample").click()
+                page.wait_for_selector("#rows tr")
+                assert "decision" in page.locator("#headline").inner_text()
+                assert page.locator("#rows tr a").first.get_attribute("href").startswith("https://www.bankofcanada.ca/")
+                page.locator("#view").select_option("latest")
+                assert "matched" in page.locator("#headline").inner_text()
+                assert page.locator("#target").is_disabled()
+                assert page.locator("#rows tr").count() >= 12
+                with page.expect_download() as event:
+                    page.locator("#download").click()
+                assert event.value.suggested_filename == "policy-rate-history.csv"
+                page.locator("#view").select_option("target")
+                page.locator("#target").select_option(index=0)
+                assert "Pending" in page.locator("#rows").inner_text()
                 page.screenshot(path=str(screenshots / "desktop.png"), full_page=True)
                 page.set_viewport_size({"width": 390, "height": 844})
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
                 page.screenshot(path=str(screenshots / "mobile.png"), full_page=True)
                 assert not errors, errors
                 browser.close()
-            print("Browser checks passed: project subpath, sample, clear, safe text and mobile layout")
+            print("Browser checks passed: project subpath, date filters, pending records, CSV export and mobile layout")
         finally:
             server.shutdown()
 
