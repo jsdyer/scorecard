@@ -17,6 +17,22 @@
   "data_info": {
     "mode": "snapshot",
     "detail": "Quarterly Bank of Canada survey medians are matched to dated policy decisions and checked weekly.",
-    "cadence": "Checked weekly"
+    "cadence": "Checked weekly",
+    "probes": [
+      {
+        "label": "Data retrieved",
+        "url": "https://coolcode.ca/scorecard/data/scorecard.json",
+        "path": [
+          "retrieved"
+        ],
+        "count_at": {
+          "path": [
+            "receipts"
+          ],
+          "measure": "length",
+          "unit": "forecast receipts"
+        }
+      }
+    ]
   }
 }
