@@ -26,3 +26,11 @@ Source: Bank of Canada. CoolCode selected, reformatted and matched two sources. 
 Use Python 3.12 and a recent Node version. Run `python scripts/refresh.py` to update the checked-in dataset through public HTTPS endpoints. Run `node --test tests/*.test.mjs`, `python -m unittest discover -s tests -v` and `python scripts/build.py`. Serve `dist/` with any static HTTP server. The built site works from its project subpath. Selecting a month and exporting CSV take place in the browser.
 
 GitHub Actions runs the source refresh weekly with a manual trigger, commits a verified snapshot and triggers the Pages workflow. The Pages workflow validates a build offline and exercises navigation and export in Chromium before deployment.
+
+<!-- schedule-reliability -->
+## Schedule reliability
+
+Public GitHub repositories can have scheduled workflows disabled after 60 days of inactivity. A separate weekly [schedule guard](.github/workflows/schedule-guard.yml) calls GitHub's enable-workflow API for an explicit list of refresh workflows and itself. It can restore workflows disabled for inactivity, preserves manually disabled workflows, and runs independently of collection failures.
+
+This is an interim mitigation, not a scheduling guarantee: GitHub does not document active-workflow renewal as a permanent exemption, and scheduled runs can be delayed or dropped. A scheduler on our own Linux server is the planned independent trigger. The guard does not collect data, create dummy commits, or change source/check timestamps; successful collection and published data freshness still need monitoring.
+<!-- /schedule-reliability -->
